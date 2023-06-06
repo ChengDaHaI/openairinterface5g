@@ -20,10 +20,11 @@
  */
 
 #include "o1_agent.h"
+#include "o1_csv.c"
 
 extern RAN_CONTEXT_t RC;
 
-o1_agent_t* o1_init_agent(const char* url, uint16_t report_interval)
+o1_agent_t* o1_init_agent(const char* url, uint16_t report_interval, const char* saving_path, const char* mode)
 {
   assert(url != NULL);
   // TODO: Check it's valid url (http or https)
@@ -34,6 +35,11 @@ o1_agent_t* o1_init_agent(const char* url, uint16_t report_interval)
   ag->url = malloc(strlen(url) * sizeof(char));
   strcpy(ag->url, url);
   ag->report_interval = report_interval;
+  ag->saving_path = malloc(strlen(saving_path) * sizeof(char));
+  strcpy(ag->saving_path, saving_path);
+  ag->mode = malloc(strlen(mode) * sizeof(char));
+  strcpy(ag->mode, mode);
+
   return ag;
 }
 
@@ -50,42 +56,44 @@ void o1_free_agent(o1_agent_t* ag)
 
 void o1_start_agent(o1_agent_t* ag)
 {
-  // init_curl();
-  o1_send_json(ag->url, gen_pnf());
+  if (strcmp(ag->mode, "json") == 0)
+  {
+    printf("O1 Mode set to json!");
+    o1_send_json(ag->url, gen_pnf());
 
-  while (!ag->agent_stopped) {
-    printf("O1 Reporting running, sleep %d\n", ag->report_interval);
-    sleep(ag->report_interval);
-    o1_send_json(ag->url, gen_hb());
-    // o1_send_json(ag->url, gen_pm(0));
-    for (int i = 0; i < RC.nb_nr_macrlc_inst; i++) {
-      pthread_mutex_lock(&RC.nrmac[i]->UE_info.mutex);
-      struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];
-      int ueIndex = 0;
-      UE_iterator(RC.nrmac[i]->UE_info.list, UE)
-      {
-        NR_UE_sched_ctrl_t* sched_ctrl = &UE->UE_sched_ctrl;
-        NR_mac_stats_t* stats = &UE->mac_stats;
-        const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-        pmf[ueIndex].avg_rsrp = avg_rsrp;
-        // pmf[i].srs_wide_band_snr = stats->srs_wide_band_snr;
-        pmf[ueIndex].rnti = UE->rnti;
-        pmf[ueIndex].dlsch_bler = sched_ctrl->dl_bler_stats.bler;
-        pmf[ueIndex].dlsch_mcs = sched_ctrl->dl_bler_stats.mcs;
-        pmf[ueIndex].ulsch_bler = sched_ctrl->ul_bler_stats.bler;
-        pmf[ueIndex].ulsch_mcs = sched_ctrl->ul_bler_stats.mcs;
-        pmf[ueIndex].cqi = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
-	ueIndex += 1;
-      }
-      pthread_mutex_unlock(&RC.nrmac[i]->UE_info.mutex);
-      for (int ueIndex = 0; ueIndex < MAX_MOBILES_PER_GNB + 1; ueIndex++) {
-        if (pmf[ueIndex].rnti) {
-          o1_send_json(ag->url, gen_pm(pmf[ueIndex]));
+    while (!ag->agent_stopped) {
+      msleep(ag->report_interval);
+      o1_send_json(ag->url, gen_hb());
+      for (int i = 0; i < RC.nb_nr_macrlc_inst; i++) {
+        gNB_MAC_INST *gNB = RC.nrmac[i];
+        struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];
+        o1_save_json(gNB, pmf);
+
+        for (int ueIndex = 0; ueIndex < MAX_MOBILES_PER_GNB + 1; ueIndex++) {
+          if (pmf[ueIndex].rnti) {
+            o1_send_json(ag->url, gen_pm(pmf[ueIndex]));
+          }
         }
       }
     }
-    // MessageDef* msg_p;
-    // itti_poll_msg(TASK_O1, msg_p);
   }
-  return;
+  else if (strcmp(ag->mode, "csv") == 0)
+  {
+    printf("O1 Mode set to csv!");
+    while (!ag->agent_stopped) {
+      // sleep(ag->report_interval);
+      msleep(ag->report_interval);
+      for (int i = 0; i < RC.nb_nr_macrlc_inst; i++) {
+        gNB_MAC_INST *gNB = RC.nrmac[i];
+        // if (((gNB->frame & 63) == 0) && (gNB->slot == 0)){ // dumping stats in every frame with slot =0
+          dump_ue_mac_stats_to_csv(gNB, ag->saving_path, true);
+        // }
+      }
+    }
+  }
+  else
+  {
+    printf("O1 Agent Mode Error!\n");
+    exit(0);
+  }
 }

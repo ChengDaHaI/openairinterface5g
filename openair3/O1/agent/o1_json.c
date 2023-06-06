@@ -34,9 +34,29 @@ uint64_t get_now_time()
 
 int o1_seqn = 0;
 
-int init_curl()
+void o1_save_json(gNB_MAC_INST *gNB, struct pm_fields *pmf)
 {
+  pthread_mutex_lock(&gNB->UE_info.mutex);
+  // struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];
+  int ueIndex = 0;
+  UE_iterator(gNB->UE_info.list, UE)
+  {
+    NR_UE_sched_ctrl_t* sched_ctrl = &UE->UE_sched_ctrl;
+    NR_mac_stats_t* stats = &UE->mac_stats;
+    const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
+    pmf[ueIndex].avg_rsrp = avg_rsrp;
+    pmf[ueIndex].rnti = UE->rnti;
+    pmf[ueIndex].dlsch_bler = sched_ctrl->dl_bler_stats.bler;
+    pmf[ueIndex].dlsch_mcs = sched_ctrl->dl_bler_stats.mcs;
+    pmf[ueIndex].ulsch_bler = sched_ctrl->ul_bler_stats.bler;
+    pmf[ueIndex].ulsch_mcs = sched_ctrl->ul_bler_stats.mcs;
+    pmf[ueIndex].cqi = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
+    ueIndex += 1;
+  }
+  pthread_mutex_unlock(&gNB->UE_info.mutex);
+  // return pmf;
 }
+
 
 int o1_send_json(char *url, json_object *jo)
 {

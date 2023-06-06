@@ -88,7 +88,6 @@
 #include "RRC/NR/nr_rrc_extern.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "openair3/O1/agent/o1_agent_api.h"
 
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
@@ -2262,9 +2261,13 @@ bool config_O1agent(o1_agent_args_t *args)
     LOG_W(GNB_APP, "configuration file does not contain a \"%s\" section, applying default parameters\n", CONFIG_STRING_O1AGENT);
     args->url = o1agent_config_url_default;
     args->report_interval = e2agent_config_report_interval_default;
+    args->saving_path = o1agent_config_saving_path;
+    args->mode = o1agent_config_mode;
     return o1agent_config_enable_default;
   }
   args->url = *o1agent_params[O1AGENT_CONFIG_URL_IDX].strptr;
   args->report_interval = *o1agent_params[O1AGENT_CONFIG_REPORT_INTERVAL_IDX].u16ptr;
+  args->saving_path = *o1agent_params[O1AGENT_CONFIG_SAVING_PATH_IDX].strptr;
+  args->mode = *o1agent_params[O1AGENT_CONFIG_MODE_IDX].strptr;
   return *o1agent_params[O1AGENT_CONFIG_ENABLE_IDX].iptr;
 }

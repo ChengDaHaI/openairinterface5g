@@ -28,6 +28,8 @@
 typedef struct {
   const char *url;
   uint16_t report_interval;
+  const char* saving_path;
+  const char* mode;
 } o1_agent_args_t;
 
 void init_o1_agent_api(o1_agent_args_t const *args);

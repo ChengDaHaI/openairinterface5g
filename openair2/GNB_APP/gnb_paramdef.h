@@ -502,20 +502,28 @@ typedef enum {
 #define O1AGENT_CONFIG_ENABLE "enable"
 #define O1AGENT_CONFIG_URL "url"
 #define O1AGENT_CONFIG_REPORT_INTERVAL "report_interval"
+#define O1AGENT_CONFIG_SAVING_PATH "saving_path"
+#define O1AGENT_CONFIG_MODE "mode"
 
 #define O1AGENT_PARAMS_DESC  \
   {  \
     {O1AGENT_CONFIG_ENABLE, "Enable the O1 Agent", PARAMFLAG_BOOL, iptr : NULL, defintval : o1agent_config_enable_default, TYPE_INT, 0},            \
     {O1AGENT_CONFIG_URL, "VES termination URL", 0, strptr : NULL, defstrval : (char *)o1agent_config_url_default, TYPE_STRING, 0},              \
     {O1AGENT_CONFIG_REPORT_INTERVAL, "Report interval", 0, u16ptr : NULL, defuintval : e2agent_config_report_interval_default, TYPE_UINT16, 0}, \
+    {O1AGENT_CONFIG_SAVING_PATH, "Saving path", 0, strptr : NULL, defstrval : (char *)o1agent_config_saving_path, TYPE_STRING, 0}, \
+    {O1AGENT_CONFIG_MODE, "O1 Mode", 0, strptr : NULL, defstrval : (char *)o1agent_config_mode, TYPE_STRING, 0}, \
   }
 
 #define O1AGENT_CONFIG_ENABLE_IDX 0
 #define O1AGENT_CONFIG_URL_IDX 1
 #define O1AGENT_CONFIG_REPORT_INTERVAL_IDX 2
+#define O1AGENT_CONFIG_SAVING_PATH_IDX 3
+#define O1AGENT_CONFIG_MODE_IDX 4
 
 static const bool o1agent_config_enable_default = 0;
 static const char *const o1agent_config_url_default = "http://localhost/";
 static const uint16_t e2agent_config_report_interval_default = 5; // seconds
+static const char *const o1agent_config_saving_path = "/home/haicheng/oai-o1/ue_metrics.csv";
+static const char *const o1agent_config_mode = "json";
 
 #endif
