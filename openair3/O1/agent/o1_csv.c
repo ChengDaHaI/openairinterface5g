@@ -1,4 +1,5 @@
-/*! \file o1_csv.c
+/*
+ * \file o1_csv.c
  * \brief metrics saving in csv file
  * \author  Hai Cheng
  * \date 2023, June 2
@@ -8,18 +9,17 @@
  * @ingroup WIOT
  */
 
+#include "o1_json.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#define MAC_STATS_BUF_LEN 16000
 
-// for timestamp
-#include <time.h>
-#include <sys/timeb.h>
 
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-
-extern RAN_CONTEXT_t RC;
+long get_time_milliseconds() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    long ms = ts.tv_sec * 1000 + round(ts.tv_nsec / 1.0e6);
+    return ms;
+}
 
 /* msleep(): Sleep for the requested number of milliseconds. */
 int msleep(long msec)
@@ -43,39 +43,23 @@ int msleep(long msec)
     return res;
 }
 
-long int get_time_milliseconds(void) {
-
-    struct timeb tmb;
-    ftime(&tmb);
-
-    return tmb.time * 1000.0 + ((long int) tmb.millitm);
-}
-
-void dump_ue_mac_stats_to_csv(gNB_MAC_INST *gNB, char *ue_metrics_csv_filepath, bool reset_rsrp)
+size_t o1_copy_mac_stats_csv(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset_rsrp)
 {
   int num = 1;
-
-  char csv_header[] = "Timestamp, Frame, Slot, IMSI, RNTI, UID, UE_No, DL_THR, UL_THR, ,PH_dB, PCMAX_dBm, AVG_RSRP, CQI, RI, raw_rssi, ul_rssi, dl_max_mcs, sched_ul_bytes, estimated_ul_buffer, num_total_bytes, dl_pdus_total, ,BLER, MCS, dlsch_errors, dlsch_total_bytes, dlsch_current_bytes, dlsch_total_rbs, dlsch_current_rbs, dl_num_mac_sdu, ,BLER, MCS, ulsch_errors, ulsch_total_bytes, ulsch_current_bytes, ulsch_total_rbs, ulsch_current_rbs, ul_num_mac_sdu, ulsch_total_bytes_scheduled, ,\n";
+  const char *begin = output;
+  const char *end = output + strlen;
 
   pthread_mutex_lock(&gNB->UE_info.mutex);
-  long timestamp = get_time_milliseconds();
 
   UE_iterator(gNB->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_mac_stats_t *stats = &UE->mac_stats;
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
 
-    char metrics[1000] = {0};
-
-    // char ue_id_str[1];
-    // char ue_metrics_csv_filepath[100] = {0};
-    // strcat(ue_metrics_csv_filepath, snprintf(ue_id_str, 1, "%d", UE->uid));
-    // strcat(ue_metrics_csv_filepath, '_metrics.csv');
-    // char ue_metrics_csv_filepath[] = "/home/haicheng/run_scripts/ue_metrics.csv";
     char ue_imsi[] = "0010100000107XX";
-
-    snprintf(metrics,
-            1000,
+    long timestamp = get_time_milliseconds();
+    output += snprintf(output,
+            end - output,
             "%ld,  %d,  %d,  %s,  %04x,  %d, %d,  %f, %f, , %d, %d,  %d,  %d,  %d,  %d,  %u,  %u,  %d,  %d,  %"PRIu32",  %"PRIu16", ,%.5f, %d, %"PRIu64", %"PRIu64", %"PRIu32", %"PRIu32",  %"PRIu32", %"PRIu32", ,%.5f, %d, %"PRIu64", %"PRIu64", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu64", , \n",
             timestamp,
             gNB->frame,
@@ -124,20 +108,38 @@ void dump_ue_mac_stats_to_csv(gNB_MAC_INST *gNB, char *ue_metrics_csv_filepath, 
       stats->num_rsrp_meas = 0;
       stats->cumul_rsrp = 0;
     }
-    // // FILE *csv_file;
-    FILE *csv_file;
-    if ( fopen(ue_metrics_csv_filepath, "r")) {
-      // file exist, write metrics
-        csv_file = fopen(ue_metrics_csv_filepath, "a");
-        fprintf(csv_file, metrics);
-    } else {
-      // file not exist, create file and write header
-      printf("file not exists: write header\n");
-      csv_file = fopen(ue_metrics_csv_filepath, "w");
-      fprintf(csv_file, csv_header);
-    }
-    fclose(csv_file);
   }
   pthread_mutex_unlock(&gNB->UE_info.mutex);
+  return output - begin;
 }
 
+void o1_save_csv(gNB_MAC_INST *gNB, char *ue_metrics_csv_filepath)
+{
+
+  char csv_header[] = "Timestamp, Frame, Slot, IMSI, RNTI, UID, UE_No, DL_THR, UL_THR, ,PH_dB, PCMAX_dBm, AVG_RSRP, CQI, RI, raw_rssi, ul_rssi, dl_max_mcs, sched_ul_bytes, estimated_ul_buffer, num_total_bytes, dl_pdus_total, ,BLER, MCS, dlsch_errors, dlsch_total_bytes, dlsch_current_bytes, dlsch_total_rbs, dlsch_current_rbs, dl_num_mac_sdu, ,BLER, MCS, ulsch_errors, ulsch_total_bytes, ulsch_current_bytes, ulsch_total_rbs, ulsch_current_rbs, ul_num_mac_sdu, ulsch_total_bytes_scheduled, ,\n";
+
+  int size = 0;
+  char output[MAC_STATS_BUF_LEN] = {0};
+  const char *end = output + MAC_STATS_BUF_LEN;
+
+  FILE *file = fopen(ue_metrics_csv_filepath,"a+");
+
+  AssertFatal(file!=NULL,"Cannot open ue_metrics.csv, error %s\n",strerror(errno));
+
+  if (NULL !=file){
+    fseek(file,0,SEEK_END);
+    size = ftell(file);
+  }
+  if (size == 0){
+    fprintf(file,csv_header);
+  }
+  // while (oai_exit == 0) {
+    char *p = output;
+    p += o1_copy_mac_stats_csv(gNB, p, end - p, true);
+    fwrite(output, p - output, 1, file);
+    fflush(file);
+    // msleep(report_interval);
+    fseek(file,0,SEEK_SET);
+  // }
+  fclose(file);
+}

@@ -2252,6 +2252,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/openair3/O1/agent/o1_agent_api.c
   ${OPENAIR_DIR}/openair3/O1/agent/o1_agent.c
   ${OPENAIR_DIR}/openair3/O1/agent/o1_json.c
+  ${OPENAIR_DIR}/openair3/O1/agent/o1_csv.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/radio/COMMON/common_lib.c
   ${OPENAIR_DIR}/radio/COMMON/record_player.c

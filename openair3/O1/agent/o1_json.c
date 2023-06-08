@@ -20,7 +20,6 @@
  */
 
 #include "o1_json.h"
-#include <time.h>
 
 uint64_t get_now_time()
 {
@@ -34,7 +33,7 @@ uint64_t get_now_time()
 
 int o1_seqn = 0;
 
-void o1_save_json(gNB_MAC_INST *gNB, struct pm_fields *pmf)
+void o1_copy_mac_stats_pmf(gNB_MAC_INST *gNB, struct pm_fields *pmf)
 {
   pthread_mutex_lock(&gNB->UE_info.mutex);
   // struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];

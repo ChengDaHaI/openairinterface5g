@@ -26,7 +26,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "PHY/defs_nr_UE.h"
-#include "o1_json.h"
 
 
 typedef struct o1_agent_s {
@@ -37,7 +36,7 @@ typedef struct o1_agent_s {
   atomic_bool agent_stopped;
 } o1_agent_t;
 
-o1_agent_t* o1_init_agent(const char* url, uint16_t report_interval, const char* saving_path, const char* mode);
+o1_agent_t* o1_init_agent(char* url, uint16_t report_interval, char* saving_path, char* mode);
 void o1_free_agent(o1_agent_t* ag);
 void o1_start_agent(o1_agent_t* ag);
 #endif

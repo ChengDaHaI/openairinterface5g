@@ -19,12 +19,13 @@
  *      contact@openairinterface.org
  */
 
+#include "o1_csv.h"
+#include "o1_json.h"
 #include "o1_agent.h"
-#include "o1_csv.c"
 
 extern RAN_CONTEXT_t RC;
 
-o1_agent_t* o1_init_agent(const char* url, uint16_t report_interval, const char* saving_path, const char* mode)
+o1_agent_t* o1_init_agent(char* url, uint16_t report_interval, char* saving_path, char* mode)
 {
   assert(url != NULL);
   // TODO: Check it's valid url (http or https)
@@ -67,7 +68,7 @@ void o1_start_agent(o1_agent_t* ag)
       for (int i = 0; i < RC.nb_nr_macrlc_inst; i++) {
         gNB_MAC_INST *gNB = RC.nrmac[i];
         struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];
-        o1_save_json(gNB, pmf);
+        o1_copy_mac_stats_pmf(gNB, pmf);
 
         for (int ueIndex = 0; ueIndex < MAX_MOBILES_PER_GNB + 1; ueIndex++) {
           if (pmf[ueIndex].rnti) {
@@ -80,14 +81,11 @@ void o1_start_agent(o1_agent_t* ag)
   else if (strcmp(ag->mode, "csv") == 0)
   {
     printf("O1 Mode set to csv!");
-    while (!ag->agent_stopped) {
-      // sleep(ag->report_interval);
+    while ((!ag->agent_stopped) && (oai_exit == 0)) {
       msleep(ag->report_interval);
       for (int i = 0; i < RC.nb_nr_macrlc_inst; i++) {
         gNB_MAC_INST *gNB = RC.nrmac[i];
-        // if (((gNB->frame & 63) == 0) && (gNB->slot == 0)){ // dumping stats in every frame with slot =0
-          dump_ue_mac_stats_to_csv(gNB, ag->saving_path, true);
-        // }
+        o1_save_csv(gNB,ag->saving_path);
       }
     }
   }

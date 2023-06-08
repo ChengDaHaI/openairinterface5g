@@ -22,17 +22,18 @@
 #ifndef O1_json_h
 #define O1_json_h
 
+#include <time.h>
 #include <json-c/json.h>
 #include <curl/curl.h>
 
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
-int o1_send_json(char *url, json_object *jo);
-json_object *gen_head(char *domain, char *event_id, char *event_name, char *eventType, char *priority);
 json_object *gen_hb();
 json_object *gen_fm();
 json_object *gen_pm();
 json_object *gen_pnf();
+int o1_send_json(char *url, json_object *jo);
+json_object *gen_head(char *domain, char *event_id, char *event_name, char *eventType, char *priority);
 
 struct pm_fields {
   int rnti;
@@ -45,5 +46,7 @@ struct pm_fields {
   float ulsch_bler;
 };
 
-void o1_save_json(gNB_MAC_INST *gNB, struct pm_fields *pmf);
+uint64_t get_now_time();
+void o1_copy_mac_stats_pmf(gNB_MAC_INST *gNB, struct pm_fields *pmf);
+
 #endif
