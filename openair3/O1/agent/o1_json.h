@@ -31,6 +31,7 @@
 json_object *gen_hb();
 json_object *gen_fm();
 json_object *gen_pm();
+json_object *gen_pm_simple();
 json_object *gen_pnf();
 int o1_send_json(char *url, json_object *jo);
 json_object *gen_head(char *domain, char *event_id, char *event_name, char *eventType, char *priority);
@@ -47,6 +48,6 @@ struct pm_fields {
 };
 
 uint64_t get_now_time();
-void o1_copy_mac_stats_pmf(gNB_MAC_INST *gNB, struct pm_fields *pmf);
+int o1_copy_mac_stats_pmf(gNB_MAC_INST *gNB, struct pm_fields *pmf);
 
 #endif

@@ -11,7 +11,7 @@ def handle_request():
   # Print the parsed data
   pprint(request_data)
 
-  return 'OOK'
+  return 'OK'
 
 if __name__ == '__main__':
   app.run()

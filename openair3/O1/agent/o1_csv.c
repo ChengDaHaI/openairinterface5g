@@ -124,7 +124,7 @@ void o1_save_csv(gNB_MAC_INST *gNB, char *ue_metrics_csv_filepath)
 
   FILE *file = fopen(ue_metrics_csv_filepath,"a+");
 
-  AssertFatal(file!=NULL,"Cannot open ue_metrics.csv, error %s\n",strerror(errno));
+  AssertFatal(file!=NULL,"Cannot open %s, error %s\n",ue_metrics_csv_filepath, strerror(errno));
 
   if (NULL !=file){
     fseek(file,0,SEEK_END);

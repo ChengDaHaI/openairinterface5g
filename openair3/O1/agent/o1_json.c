@@ -33,27 +33,32 @@ uint64_t get_now_time()
 
 int o1_seqn = 0;
 
-void o1_copy_mac_stats_pmf(gNB_MAC_INST *gNB, struct pm_fields *pmf)
+int o1_copy_mac_stats_pmf(gNB_MAC_INST *gNB, struct pm_fields *pmf)
 {
   pthread_mutex_lock(&gNB->UE_info.mutex);
   // struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];
   int ueIndex = 0;
-  UE_iterator(gNB->UE_info.list, UE)
-  {
-    NR_UE_sched_ctrl_t* sched_ctrl = &UE->UE_sched_ctrl;
-    NR_mac_stats_t* stats = &UE->mac_stats;
-    const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    pmf[ueIndex].avg_rsrp = avg_rsrp;
-    pmf[ueIndex].rnti = UE->rnti;
-    pmf[ueIndex].dlsch_bler = sched_ctrl->dl_bler_stats.bler;
-    pmf[ueIndex].dlsch_mcs = sched_ctrl->dl_bler_stats.mcs;
-    pmf[ueIndex].ulsch_bler = sched_ctrl->ul_bler_stats.bler;
-    pmf[ueIndex].ulsch_mcs = sched_ctrl->ul_bler_stats.mcs;
-    pmf[ueIndex].cqi = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
-    ueIndex += 1;
-  }
+  // int k = 0;
+  // while(k < 10)// test the performance by copy the ue metric 10 times
+  // {
+    UE_iterator(gNB->UE_info.list, UE)
+    {
+      NR_UE_sched_ctrl_t* sched_ctrl = &UE->UE_sched_ctrl;
+      NR_mac_stats_t* stats = &UE->mac_stats;
+      const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
+      pmf[ueIndex].avg_rsrp = avg_rsrp;
+      pmf[ueIndex].rnti = UE->rnti;
+      pmf[ueIndex].dlsch_bler = sched_ctrl->dl_bler_stats.bler;
+      pmf[ueIndex].dlsch_mcs = sched_ctrl->dl_bler_stats.mcs;
+      pmf[ueIndex].ulsch_bler = sched_ctrl->ul_bler_stats.bler;
+      pmf[ueIndex].ulsch_mcs = sched_ctrl->ul_bler_stats.mcs;
+      pmf[ueIndex].cqi = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
+      ueIndex += 1;
+    }
+  //   k++;
+  // }
   pthread_mutex_unlock(&gNB->UE_info.mutex);
-  // return pmf;
+  return ueIndex;
 }
 
 
@@ -74,6 +79,7 @@ int o1_send_json(char *url, json_object *jo)
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1L);
   curl_easy_setopt(curl, CURLOPT_FRESH_CONNECT, 1L);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
+  // curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
@@ -165,31 +171,30 @@ json_object *gen_fm()
   return root;
 }
 
-json_object *gen_pm(struct pm_fields pm_f)
+json_object *gen_pm_simple(struct pm_fields pm_f)
 {
-  //  json_object *meas_fields = json_object_new_object();
-  //   json_object_object_add(meas_fields, "rnti", json_object_new_int(pm_f.rnti));
-  //   json_object_object_add(meas_fields, "avg_rsrp", json_object_new_int(pm_f.avg_rsrp));
-  //   json_object_object_add(meas_fields, "srs_wide_band_snr", json_object_new_int(pm_f.srs_wide_band_snr));
-  //   json_object_object_add(meas_fields, "dlsch_mcs", json_object_new_int(pm_f.dlsch_mcs));
-  //   json_object_object_add(meas_fields, "ulsch_mcs", json_object_new_int(pm_f.ulsch_mcs));
-  //   json_object_object_add(meas_fields, "cqi", json_object_new_int(pm_f.cqi));
-  //   json_object_object_add(meas_fields, "dlsch_bler", json_object_new_double(pm_f.dlsch_bler));
-  //   json_object_object_add(meas_fields, "ulsch_bler", json_object_new_double(pm_f.ulsch_bler));
+  json_object *meas_fields = json_object_new_object();
+  json_object_object_add(meas_fields, "rnti", json_object_new_int(pm_f.rnti));
+  json_object_object_add(meas_fields, "avg_rsrp", json_object_new_int(pm_f.avg_rsrp));
+  // json_object_object_add(meas_fields, "srs_wide_band_snr", json_object_new_int(pm_f.srs_wide_band_snr));
+  json_object_object_add(meas_fields, "dlsch_mcs", json_object_new_int(pm_f.dlsch_mcs));
+  json_object_object_add(meas_fields, "ulsch_mcs", json_object_new_int(pm_f.ulsch_mcs));
+  // json_object_object_add(meas_fields, "cqi", json_object_new_int(pm_f.cqi));
+  json_object_object_add(meas_fields, "dlsch_bler", json_object_new_double(pm_f.dlsch_bler));
+  json_object_object_add(meas_fields, "ulsch_bler", json_object_new_double(pm_f.ulsch_bler));
   // json_object_object_add(meas_fields, "measurementInterval", json_object_new_int(1));
   // json_object_object_add(meas_fields, "measurementFieldsVersion", json_object_new_string("4.0"));
-  // json_object_object_add(meas_fields, "additionalFields", additional_information);
-  // json_object_object_add(event, "measurementFields", meas_fields);
 
-  // json_object *additional_information = json_object_new_object();
+  json_object *root = json_object_new_object();
+  json_object_object_add(root, "data", meas_fields);
+
+  return root;
+}
+
+json_object *gen_pm(struct pm_fields pm_f)
+{
 
   json_object *meas_array = json_object_new_array_ext(4);
-  // json_object *meas = json_object_new_object();
-  //  json_object_object_add(meas,
-  //                         "measurement-type-instance-reference",
-  //                         json_object_new_string("/o-ran-sc-du-hello-world:network-function/distributed-unit-functions[id='O-DU-1122']/cell[id='cell-1']/supported-measurements[performance-measurement-type='(urn:o-ran-sc:yang:o-ran-sc-du-hello-world?revision=2021-11-23)user-equipment-average-throughput-uplink']/supported-snssai-subcounter-instances[slice-differentiator='1'][slice-service-type='1']"));
-  //  json_object_object_add(meas, "unit", json_object_new_string("kbit/s"));
-  //  json_object_object_add(meas, "value", json_object_new_int(53707));
   json_object *meas = json_object_new_object();
   json_object_object_add(meas, "measurement-type-instance-reference", json_object_new_string("rnti"));
   json_object_object_add(meas, "unit", json_object_new_string("id"));

@@ -60,19 +60,19 @@ void o1_start_agent(o1_agent_t* ag)
   if (strcmp(ag->mode, "json") == 0)
   {
     printf("O1 Mode set to json!");
-    o1_send_json(ag->url, gen_pnf());
+    // o1_send_json(ag->url, gen_pnf());
 
     while (!ag->agent_stopped) {
       msleep(ag->report_interval);
-      o1_send_json(ag->url, gen_hb());
+      // o1_send_json(ag->url, gen_hb());
       for (int i = 0; i < RC.nb_nr_macrlc_inst; i++) {
         gNB_MAC_INST *gNB = RC.nrmac[i];
         struct pm_fields pmf[MAX_MOBILES_PER_GNB + 1];
-        o1_copy_mac_stats_pmf(gNB, pmf);
+        int ueNum = o1_copy_mac_stats_pmf(gNB, pmf);
 
-        for (int ueIndex = 0; ueIndex < MAX_MOBILES_PER_GNB + 1; ueIndex++) {
+        for (int ueIndex = 0; ueIndex < ueNum; ueIndex++) {
           if (pmf[ueIndex].rnti) {
-            o1_send_json(ag->url, gen_pm(pmf[ueIndex]));
+            o1_send_json(ag->url, gen_pm_simple(pmf[ueIndex]));
           }
         }
       }
