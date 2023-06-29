@@ -60,7 +60,7 @@ size_t o1_copy_mac_stats_csv(gNB_MAC_INST *gNB, char *output, size_t strlen, boo
     long timestamp = get_time_milliseconds();
     output += snprintf(output,
             end - output,
-            "%ld,  %d,  %d,  %s,  %04x,  %d, %d,  %f, %f, , %d, %d,  %d,  %d,  %d,  %d,  %u,  %u,  %d,  %d,  %"PRIu32",  %"PRIu16", ,%.5f, %d, %"PRIu64", %"PRIu64", %"PRIu32", %"PRIu32",  %"PRIu32", %"PRIu32", ,%.5f, %d, %"PRIu64", %"PRIu64", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu64", , \n",
+            "%ld,  %d,  %d,  %s,  %04x,  %d, %d,  %f, %f, , %d, %d,  %d,  %d,  %d,  %d,  %u,  %u,  %d,  %d,  %"PRIu32",  %"PRIu16", ,%.5f, %d, %"PRIu64", %"PRIu64", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu64", %"PRIu64", ,%.5f, %d, %"PRIu64", %"PRIu64", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", , \n",
             timestamp,
             gNB->frame,
             gNB->slot,
@@ -92,6 +92,8 @@ size_t o1_copy_mac_stats_csv(gNB_MAC_INST *gNB, char *output, size_t strlen, boo
             stats->dl.total_rbs,
             stats->dl.current_rbs,
             stats->dl.num_mac_sdu,
+            stats->dl.lc_bytes[4],
+            stats->dl.lc_bytes[5],
             // UL stats
             sched_ctrl->ul_bler_stats.bler,
             sched_ctrl->ul_bler_stats.mcs,
@@ -100,8 +102,7 @@ size_t o1_copy_mac_stats_csv(gNB_MAC_INST *gNB, char *output, size_t strlen, boo
             stats->ul.current_bytes,
             stats->ul.total_rbs,
             stats->ul.current_rbs,
-            stats->ul.num_mac_sdu,
-            stats->ulsch_total_bytes_scheduled
+            stats->ul.num_mac_sdu
             );
 
     if (reset_rsrp) {
@@ -116,7 +117,7 @@ size_t o1_copy_mac_stats_csv(gNB_MAC_INST *gNB, char *output, size_t strlen, boo
 void o1_save_csv(gNB_MAC_INST *gNB, char *ue_metrics_csv_filepath)
 {
 
-  char csv_header[] = "Timestamp, Frame, Slot, IMSI, RNTI, UID, UE_No, DL_THR, UL_THR, ,PH_dB, PCMAX_dBm, AVG_RSRP, CQI, RI, raw_rssi, ul_rssi, dl_max_mcs, sched_ul_bytes, estimated_ul_buffer, num_total_bytes, dl_pdus_total, ,BLER, MCS, dlsch_errors, dlsch_total_bytes, dlsch_current_bytes, dlsch_total_rbs, dlsch_current_rbs, dl_num_mac_sdu, ,BLER, MCS, ulsch_errors, ulsch_total_bytes, ulsch_current_bytes, ulsch_total_rbs, ulsch_current_rbs, ul_num_mac_sdu, ulsch_total_bytes_scheduled, ,\n";
+  char csv_header[] = "Timestamp, Frame, Slot, IMSI, RNTI, UID, UE_No, DL_THR, UL_THR, ,PH_dB, PCMAX_dBm, AVG_RSRP, CQI, RI, raw_rssi, ul_rssi, dl_max_mcs, sched_ul_bytes, estimated_ul_buffer, num_total_bytes, dl_pdus_total, ,dl_BLER, dl_MCS, dlsch_errors, dlsch_total_bytes, dlsch_current_bytes, dlsch_total_rbs, dlsch_current_rbs, dl_num_mac_sdu, dl_lc_bytes_4, dl_lc_bytes_5, ,ul_BLER, ul_MCS, ulsch_errors, ulsch_total_bytes, ulsch_current_bytes, ulsch_total_rbs, ulsch_current_rbs, ul_num_mac_sdu, ulsch_total_bytes_scheduled, ul_lc_bytes_4, ul_lc_bytes_5, ,\n";
 
   int size = 0;
   char output[MAC_STATS_BUF_LEN] = {0};
